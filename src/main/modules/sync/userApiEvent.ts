@@ -1,15 +1,33 @@
-import { getUserApiData, getUserApis } from '@main/modules/userApi/utils'
+import { getUserApiData } from '@main/modules/userApi/utils'
 import { toMD5 } from './server/utils'
 import { serializeUserApiData } from './server/modules/userapi/utils'
 
 
-// 应用远端数据期间抑制本地事件对客户端的回推（双向防回声）。
+// 应用远端数据期间抑制本地事件对客户端/服务端的回推（双向防回声）。
 // 用计数而非布尔：并发应用多份远端数据时，先完成的一份不能提前解除抑制。
 let remoteApplyingCount = 0
-// 最近一次已与远端对齐（发送或接收）的状态签名，用于阻止把相同内容反复推回
-let lastSyncedSignature: string | null = null
 
-const getSignature = (data: LX.UserApi.UserApiData) => toMD5(serializeUserApiData(data) + '|' + (data.apiSource ?? ''))
+interface SyncState {
+  apis: Map<string, LX.UserApi.UserApiInfo>
+  scripts: Map<string, string>
+  active: string | null
+}
+// 最近一次已知的本地同步状态：本地事件触发时与它做 diff，只发送增量
+let lastSyncState: SyncState | null = null
+
+const getLocalActive = () => {
+  const source = global.lx.appSetting['common.apiSource']
+  return /^user_api/.test(source) ? source : null
+}
+
+const readSyncState = async(): Promise<SyncState> => {
+  const data = await getUserApiData()
+  return {
+    apis: new Map(data.apis.map(api => [api.id, api])),
+    scripts: new Map(Object.entries(data.scripts)),
+    active: getLocalActive(),
+  }
+}
 
 /**
  * 应用同步数据携带的激活源选择：
@@ -17,8 +35,7 @@ const getSignature = (data: LX.UserApi.UserApiData) => toMD5(serializeUserApiDat
  * - 未携带 → 保持本机选择
  * - 本机激活源已被同步删除 → 回退到剩余的第一个源
  */
-const applyApiSource = (apiSource: string | null | undefined) => {
-  const apis = getUserApis()
+const applyApiSource = (apiSource: string | null | undefined, apis: LX.UserApi.UserApiInfo[]) => {
   const currentSource = global.lx.appSetting['common.apiSource']
   if (apiSource != null && /^user_api/.test(apiSource) && apis.some(api => api.id == apiSource)) {
     if (apiSource != currentSource) {
@@ -32,6 +49,19 @@ const applyApiSource = (apiSource: string | null | undefined) => {
   }
 }
 
+// 应用一份完整数据（初始同步/完全覆盖）并抑制回推
+const writeLocalData = async(data: LX.UserApi.UserApiData, apiSource?: string | null) => {
+  remoteApplyingCount++
+  try {
+    await global.lx.event_userApi.user_api_data_overwrite(data, true)
+    applyApiSource(apiSource, data.apis)
+  } finally {
+    remoteApplyingCount--
+  }
+  // 记录应用后的本机状态，后续事件与它对比即可忽略回声
+  lastSyncState = await readSyncState()
+}
+
 export const getUserApiDataMD5 = async(): Promise<string> => {
   const data = await getUserApiData()
   return toMD5(serializeUserApiData(data))
@@ -42,52 +72,111 @@ export const getLocalUserApiData = async(): Promise<LX.UserApi.UserApiData> => {
 }
 
 export const setLocalUserApiData = async(data: LX.UserApi.UserApiData, apiSource?: string | null) => {
-  remoteApplyingCount++
-  try {
-    await global.lx.event_userApi.user_api_data_overwrite(data, true)
-    applyApiSource(apiSource)
-    // 记录应用后的本机状态，避免后续事件把相同内容再推回
-    lastSyncedSignature = getSignature(await getUserApiData())
-  } finally {
-    remoteApplyingCount--
+  await writeLocalData(data, apiSource)
+}
+
+// 把服务端下发的细粒度 action 应用到本地数据（server/client 模式共用）
+const applyRemoteAction = async(action: LX.Sync.UserApi.ActionList) => {
+  switch (action.action) {
+    case 'user_api_add': {
+      const current = await getLocalUserApiData()
+      if (current.apis.some(api => api.id == action.data.api.id)) return
+      await writeLocalData({
+        apis: [...current.apis, action.data.api],
+        scripts: { ...current.scripts, [action.data.api.id]: action.data.script },
+        apiSource: current.apiSource ?? null,
+      })
+      break
+    }
+    case 'user_api_update': {
+      const current = await getLocalUserApiData()
+      const index = current.apis.findIndex(api => api.id == action.data.api.id)
+      if (index < 0) return
+      const apis = [...current.apis]
+      apis[index] = action.data.api
+      const scripts = { ...current.scripts }
+      if (typeof action.data.script == 'string' && action.data.script != '') {
+        scripts[action.data.api.id] = action.data.script
+      }
+      await writeLocalData({ apis, scripts, apiSource: current.apiSource ?? null })
+      break
+    }
+    case 'user_api_remove': {
+      const current = await getLocalUserApiData()
+      const ids = new Set(action.data.ids)
+      if (!current.apis.some(api => ids.has(api.id))) return
+      const apis = current.apis.filter(api => !ids.has(api.id))
+      const scripts = { ...current.scripts }
+      for (const id of ids) {
+        // eslint-disable-next-line @typescript-eslint/no-dynamic-delete
+        delete scripts[id]
+      }
+      await writeLocalData({ apis, scripts, apiSource: current.apiSource ?? null })
+      break
+    }
+    case 'user_api_active': {
+      if (action.data.id == null) return
+      const current = await getLocalUserApiData()
+      if (!current.apis.some(api => api.id == action.data.id)) return
+      await writeLocalData(current, action.data.id)
+      break
+    }
+    case 'user_api_data_overwrite':
+      await writeLocalData(action.data, action.data.apiSource ?? null)
+      break
+    default:
+      throw new Error('unknown user api sync action')
   }
 }
 
+export const handleRemoteUserApiAction = applyRemoteAction
+
 export const registerUserApiActionEvent = (sendUserApiAction: (action: LX.Sync.UserApi.ActionList) => (void | Promise<void>)) => {
-  const sendLocalData = async() => {
+  // 与上次已知状态做 diff，只发送增量
+  const flushLocalChanges = async() => {
     if (remoteApplyingCount > 0) return
-    const data = await getUserApiData()
-    const signature = getSignature(data)
-    // 与上次已同步状态一致则无需推送（可避免事件抖动/回声造成重复请求）
-    if (signature == lastSyncedSignature) return
-    lastSyncedSignature = signature
-    await sendUserApiAction({ action: 'user_api_data_overwrite', data })
+    const next = await readSyncState()
+    const prev = lastSyncState
+    lastSyncState = next
+    if (!prev) return
+
+    const removedIds = [...prev.apis.keys()].filter(id => !next.apis.has(id))
+    if (removedIds.length) await sendUserApiAction({ action: 'user_api_remove', data: { ids: removedIds } })
+
+    for (const [id, api] of next.apis) {
+      if (prev.apis.has(id)) continue
+      await sendUserApiAction({ action: 'user_api_add', data: { api, script: next.scripts.get(id) ?? '' } })
+    }
+
+    for (const [id, api] of next.apis) {
+      const prevApi = prev.apis.get(id)
+      if (!prevApi) continue
+      const scriptChanged = (prev.scripts.get(id) ?? '') != (next.scripts.get(id) ?? '')
+      if (!scriptChanged && JSON.stringify(prevApi) == JSON.stringify(api)) continue
+      await sendUserApiAction({ action: 'user_api_update', data: { api, script: next.scripts.get(id) ?? '' } })
+    }
+
+    if (prev.active != next.active) {
+      await sendUserApiAction({ action: 'user_api_active', data: { id: next.active } })
+    }
   }
 
   const user_api_changed = async() => {
-    await sendLocalData()
+    await flushLocalChanges()
   }
   const updated_config = async(keys: Array<keyof LX.AppSetting>) => {
-    // 激活源选择变化也属于需要同步的状态
     if (!keys.includes('common.apiSource')) return
-    await sendLocalData()
+    await flushLocalChanges()
   }
+
+  void readSyncState().then(state => {
+    lastSyncState = state
+  })
 
   global.lx.event_userApi.on('user_api_changed', user_api_changed)
   global.lx.event_app.on('updated_config', updated_config)
   return () => {
     global.lx.event_userApi.off('user_api_changed', user_api_changed)
     global.lx.event_app.off('updated_config', updated_config)
-  }
-}
-
-export const handleRemoteUserApiAction = async(event: LX.Sync.UserApi.ActionList) => {
-  switch (event.action) {
-    case 'user_api_data_overwrite':
-      // 广播/推送同样应用激活源选择（源存在时）
-      await setLocalUserApiData(event.data, event.data.apiSource ?? null)
-      break
-    default:
-      throw new Error('unknown user api sync action')
   }
 }
