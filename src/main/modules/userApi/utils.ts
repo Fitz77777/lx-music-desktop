@@ -157,9 +157,12 @@ export const getUserApiData = async(): Promise<LX.UserApi.UserApiData> => {
   for (const api of apis) {
     scriptsData[api.id] = await inflateScript(scripts.get(api.id) ?? '')
   }
+  // 附加当前激活源选择（若为 user_api 源）：供完全覆盖类同步流程传递；md5/快照序列化会剔除该字段
+  const apiSource = global.lx.appSetting['common.apiSource'] ?? null
   return {
     apis: apis.map(api => ({ ...api })),
     scripts: scriptsData,
+    apiSource: /^user_api/.test(apiSource) ? apiSource : null,
   }
 }
 
