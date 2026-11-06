@@ -50,12 +50,11 @@ const setLocalData = async(socket: LX.Sync.Server.Socket, data: LX.UserApi.UserA
 const overwriteRemoteData = async(socket: LX.Sync.Server.Socket, data: LX.UserApi.UserApiData, key: string, excludeIds: string[] = []) => {
   const action = { action: 'user_api_data_overwrite', data } as const
   const tasks: Array<Promise<void>> = []
-  const userSpace = getUserSpace(socket.userInfo.name)
   socket.broadcast((client) => {
     if (excludeIds.includes(client.keyInfo.clientId) || client.userInfo?.name != socket.userInfo.name || !client.moduleReadys?.userApi) return
-    tasks.push(client.remoteQueueUserApi.onUserApiSyncAction(action).then(async() => {
-      return userSpace.userApiManage.updateDeviceSnapshotKey(client.keyInfo.clientId, key)
-    }).catch(err => {
+    // 不在此处推进目标设备的快照 key：推送可能因对方未就绪/断线而未真正应用，
+    // 让对方在下次连接时通过 md5 对比自愈（checkDataLatest），避免误当作基线合并导致误删。
+    tasks.push(client.remoteQueueUserApi.onUserApiSyncAction(action).catch(err => {
       // TODO send status
       client.close(SYNC_CLOSE_CODE.failed)
       console.log(err.message)
@@ -109,8 +108,9 @@ const mergeDataFromSnapshot = (localData: LX.UserApi.UserApiData, remoteData: LX
   const localIds = new Set(localData.apis.map(api => api.id))
   const remoteIds = new Set(remoteData.apis.map(api => api.id))
   if (snapshot) {
+    // 快照基线中存在的源，只要有一侧已缺失，即视为删除并传播到双方
     for (const api of snapshot.apis) {
-      if (remoteIds.has(api.id) || localIds.has(api.id)) removedIds.add(api.id)
+      if (!remoteIds.has(api.id) || !localIds.has(api.id)) removedIds.add(api.id)
     }
   }
 
@@ -277,7 +277,11 @@ export const sync = async(socket: LX.Sync.Server.Socket) => {
   }
 
   syncingId = socket.keyInfo.clientId
-  await syncData(socket).then(async() => {
+  // 用户取消同步方式选择不应导致 userApi 功能整体失活（取消仅跳过本次初始合并），
+  // 仍然要通知客户端 finished 以便开启后续的实时推送。
+  await syncData(socket).catch(err => {
+    if (err?.message != 'cancel') throw err
+  }).then(async() => {
     await finishedSync(socket)
     socket.moduleReadys.userApi = true
   }).finally(() => {

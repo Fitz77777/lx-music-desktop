@@ -56,7 +56,7 @@ const handler: LX.Sync.ClientSyncHandlerUserApiActions<LX.Sync.Client.Socket> = 
     socket.moduleReadys.userApi = true
     registerEvent(socket)
     socket.onClose(() => {
-      unregisterEvent()
+      unregisterEvent(socket)
     })
   },
 }

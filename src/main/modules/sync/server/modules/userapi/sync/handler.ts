@@ -15,13 +15,12 @@ const handler: LX.Sync.ServerSyncHandlerUserApiActions<LX.Sync.Server.Socket> = 
     if (!socket.moduleReadys?.userApi) return
     const key = await handleUserApiAction(socket.userInfo.name, action)
     console.log('user api action snapshot key', key)
-    const userSpace = getUserSpace(socket.userInfo.name)
     const currentId = socket.keyInfo.clientId
     socket.broadcast((client) => {
       if (client.keyInfo.clientId == currentId || !client.moduleReadys?.userApi) return
-      void client.remoteQueueUserApi.onUserApiSyncAction(action).then(async() => {
-        return userSpace.userApiManage.updateDeviceSnapshotKey(client.keyInfo.clientId, key)
-      }).catch(err => {
+      // 不推进目标设备的快照 key：推送可能被对方忽略（未就绪）或丢失，
+      // 由对方下次连接时的 md5 对比决定是否需要基于其旧快照重新合并。
+      void client.remoteQueueUserApi.onUserApiSyncAction(action).catch(err => {
         // TODO send status
         client.close(SYNC_CLOSE_CODE.failed)
         console.log(err.message)
