@@ -741,8 +741,12 @@
   "user_api__update_alert": "음악 API \"{name}\"의 새 버전을 찾았습니다: ",
   "user_api__update_alert_open_url": "업데이트 주소 열기",
   "user_api_import__failed": "음악 API 가져오기에 실패했습니다:\n\n{message}",
+  "user_api_import_online__btn_retry": "실패한 항목 다시 시도",
+  "user_api_import_online__empty_tip": "유효한 링크를 찾을 수 없습니다",
   "user_api_import_online__input_confirm": "가져오기",
-  "user_api_import_online__input_loading": "가져오는 중...",
-  "user_api_import_online__input_tip": "HTTP 링크를 입력하세요",
+  "user_api_import_online__input_loading": "가져오는 중 {current}/{total}...",
+  "user_api_import_online__input_tip": "HTTP 링크를 입력하세요, 여러 개는 한 줄에 하나씩",
+  "user_api_import_online__summary_failed_tip": "{n}개 실패:",
+  "user_api_import_online__summary_success_tip": "{n}개 성공적으로 가져왔습니다:",
   "user_api_import_online__title": "네트워크에서 음악 API 가져오기"
 }

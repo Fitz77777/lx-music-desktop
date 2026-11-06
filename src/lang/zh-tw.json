@@ -750,8 +750,12 @@
   "user_api__update_alert": "自訂來源 API「{name}」發現新版本：",
   "user_api__update_alert_open_url": "開啟更新位址",
   "user_api_import__failed": "自訂來源 API 匯入失敗：\n{message}",
+  "user_api_import_online__btn_retry": "重試失敗項",
+  "user_api_import_online__empty_tip": "未發現有效連結",
   "user_api_import_online__input_confirm": "匯入",
-  "user_api_import_online__input_loading": "匯入中...",
-  "user_api_import_online__input_tip": "請輸入 HTTP 連結",
+  "user_api_import_online__input_loading": "匯入中 {current}/{total}...",
+  "user_api_import_online__input_tip": "請輸入 HTTP 連結，多個連結請每行一個",
+  "user_api_import_online__summary_failed_tip": "失敗 {n} 個：",
+  "user_api_import_online__summary_success_tip": "成功匯入 {n} 個：",
   "user_api_import_online__title": "從線上匯入自訂來源 API"
 }

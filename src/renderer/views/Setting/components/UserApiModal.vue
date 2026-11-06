@@ -26,7 +26,7 @@ material-modal(:show="modelValue" bg-close teleport="#view" @close="handleClose"
       base-btn(:class="$style.footerBtn" @click="isShowOnlineImportModal = true") {{ $t('user_api__btn_import_online') }}
       base-btn(:class="$style.footerBtn" @click="handleImport") {{ $t('user_api__btn_import') }}
       //- base-btn(:class="$style.footerBtn" @click="handleExport") {{ $t('user_api__btn_export') }}
-    UserApiOnlineImportModal(v-model:show="isShowOnlineImportModal" @import="importUserApi")
+    UserApiOnlineImportModal(v-model:show="isShowOnlineImportModal" :import-handler="importUserApi" :list-count="userApi.list.length")
 </template>
 
 <script>
@@ -65,10 +65,11 @@ export default {
   },
   methods: {
     async importUserApi(script) {
-      return importUserApi(script).then(({ apiList }) => {
+      return importUserApi(script).then(({ apiInfo, apiList }) => {
         userApi.list = apiList
+        return apiInfo
       }).catch((err) => {
-        void dialog(this.$t('user_api_import__failed', { message: err.message }))
+        throw err
       })
     },
     handleImport() {
@@ -89,7 +90,9 @@ export default {
       }).then(async result => {
         if (result.canceled) return
         return readFile(result.filePaths[0]).then(async data => {
-          return this.importUserApi(data.toString())
+          return this.importUserApi(data.toString()).catch(err => {
+            void dialog(this.$t('user_api_import__failed', { message: err.message }))
+          })
         })
       })
     },

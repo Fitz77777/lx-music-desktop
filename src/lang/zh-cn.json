@@ -750,8 +750,12 @@
   "user_api__update_alert": "自定义源「{name}」发现新版本：",
   "user_api__update_alert_open_url": "打开更新地址",
   "user_api_import__failed": "自定义源导入失败：\n{message}",
+  "user_api_import_online__btn_retry": "重试失败项",
+  "user_api_import_online__empty_tip": "未发现有效链接",
   "user_api_import_online__input_confirm": "导入",
-  "user_api_import_online__input_loading": "导入中...",
-  "user_api_import_online__input_tip": "请输入 HTTP 链接",
+  "user_api_import_online__input_loading": "导入中 {current}/{total}...",
+  "user_api_import_online__input_tip": "请输入 HTTP 链接，多个链接请每行一个",
+  "user_api_import_online__summary_failed_tip": "失败 {n} 个：",
+  "user_api_import_online__summary_success_tip": "成功导入 {n} 个：",
   "user_api_import_online__title": "在线导入自定义源"
 }
