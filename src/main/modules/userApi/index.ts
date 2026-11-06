@@ -4,6 +4,8 @@ import { loadApi, setAllowShowUpdateAlert as setRendererEventAllowShowUpdateAler
 
 let userApiId: string | null
 
+export const getCurrentApiId = () => userApiId
+
 export const getApiList = getUserApis
 
 export const importApi = async(script: string): Promise<LX.UserApi.ImportUserApi> => {

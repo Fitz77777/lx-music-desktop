@@ -19,6 +19,11 @@ declare namespace LX {
     }>
     type ServerSyncHandlerDislikeActions<Socket> = WarpSyncHandlerActions<Socket, ServerSyncDislikeActions>
 
+    type ServerSyncUserApiActions = WarpPromiseRecord<{
+      onUserApiSyncAction: (action: LX.Sync.UserApi.ActionList) => void
+    }>
+    type ServerSyncHandlerUserApiActions<Socket> = WarpSyncHandlerActions<Socket, ServerSyncUserApiActions>
+
     type ClientSyncActions = WarpPromiseRecord<{
       getEnabledFeatures: (serverType: ServerType, supportedFeatures: SupportedFeatures) => EnabledFeatures
       finished: () => void
@@ -44,6 +49,16 @@ declare namespace LX {
       dislike_sync_finished: () => void
     }>
     type ClientSyncHandlerDislikeActions<Socket> = WarpSyncHandlerActions<Socket, ClientSyncDislikeActions>
+
+    type ClientSyncUserApiActions = WarpPromiseRecord<{
+      onUserApiSyncAction: (action: LX.Sync.UserApi.ActionList) => void
+      user_api_sync_get_md5: () => string
+      user_api_sync_get_sync_mode: () => LX.Sync.UserApi.SyncMode
+      user_api_sync_get_list_data: () => LX.UserApi.UserApiData
+      user_api_sync_set_list_data: (data: LX.UserApi.UserApiData) => void
+      user_api_sync_finished: () => void
+    }>
+    type ClientSyncHandlerUserApiActions<Socket> = WarpSyncHandlerActions<Socket, ClientSyncUserApiActions>
   }
 }
 

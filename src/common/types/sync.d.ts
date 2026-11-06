@@ -23,6 +23,7 @@ declare namespace LX {
     interface ModeTypes {
       list: LX.Sync.List.SyncMode
       dislike: LX.Sync.Dislike.SyncMode
+      userApi: LX.Sync.UserApi.SyncMode
     }
 
     type ModeType = { [K in keyof ModeTypes]: { type: K, mode: ModeTypes[K] } }[keyof ModeTypes]
@@ -75,10 +76,14 @@ declare namespace LX {
     interface DislikeConfig {
       skipSnapshot: boolean
     }
+    interface UserApiConfig {
+      skipSnapshot: boolean
+    }
     type ServerType = 'desktop-app' | 'server'
     interface EnabledFeatures {
       list?: false | ListConfig
       dislike?: false | DislikeConfig
+      userApi?: false | UserApiConfig
     }
     type SupportedFeatures = Partial<{ [k in keyof EnabledFeatures]: number }>
   }

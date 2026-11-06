@@ -125,6 +125,7 @@ export const importApi = async(scriptRaw: string): Promise<LX.UserApi.UserApiInf
   userApis.push(apiInfo)
   scripts.set(apiInfo.id, script)
   saveData()
+  global.lx.event_userApi?.user_api_changed()
   return apiInfo
 }
 
@@ -138,6 +139,7 @@ export const removeApi = (ids: string[]) => {
     }
   }
   saveData()
+  global.lx.event_userApi?.user_api_changed()
 }
 
 export const setAllowShowUpdateAlert = (id: string, enable: boolean) => {
@@ -145,6 +147,54 @@ export const setAllowShowUpdateAlert = (id: string, enable: boolean) => {
   if (!targetApi) return
   targetApi.allowShowUpdateAlert = enable
   saveData()
+  global.lx.event_userApi?.user_api_changed()
+}
+
+// 同步模块使用：读取完整自定义源数据（脚本内容为解压后的原始文本）
+export const getUserApiData = async(): Promise<LX.UserApi.UserApiData> => {
+  const apis = getUserApis()
+  const scriptsData: Record<string, string> = {}
+  for (const api of apis) {
+    scriptsData[api.id] = await inflateScript(scripts.get(api.id) ?? '')
+  }
+  return {
+    apis: apis.map(api => ({ ...api })),
+    scripts: scriptsData,
+  }
+}
+
+const sanitizeUserApiData = (data: LX.UserApi.UserApiData) => {
+  const apis: LX.UserApi.UserApiInfo[] = []
+  const newScripts: Array<{ id: string, script: string }> = []
+  const ids = new Set<string>()
+  for (const api of data.apis) {
+    if (typeof api.id != 'string' || !api.id) continue
+    if (typeof data.scripts[api.id] != 'string' || data.scripts[api.id] == '') continue
+    if (ids.has(api.id)) continue
+    ids.add(api.id)
+    apis.push(api)
+    newScripts.push({ id: api.id, script: data.scripts[api.id] })
+  }
+  return { apis, newScripts }
+}
+
+// 同步模块使用：以脚本 id 为单位全量覆盖自定义源数据
+export const overwriteUserApiData = async(data: LX.UserApi.UserApiData) => {
+  const { apis, newScripts } = sanitizeUserApiData(data)
+  const newIds = new Set(apis.map(api => api.id))
+  const removedIds = (userApis ?? []).filter(api => !newIds.has(api.id)).map(api => api.id)
+  const changedIds: string[] = []
+  for (const { id, script } of newScripts) {
+    const existing = await inflateScript(scripts.get(id) ?? '')
+    if (existing == script) continue
+    changedIds.push(id)
+    scripts.set(id, await deflateScript(script))
+  }
+  for (const id of removedIds) scripts.delete(id)
+  const target = getUserApis()
+  target.splice(0, target.length, ...apis)
+  saveData()
+  return { changedIds, removedIds }
 }
 
 export const getScript = async(id: string) => {

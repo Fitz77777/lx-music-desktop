@@ -239,6 +239,7 @@ export const connect = (urlInfo: LX.Sync.Client.UrlInfo, keyInfo: LX.Sync.Client
     client!.moduleReadys = {
       list: false,
       dislike: false,
+      userApi: false,
     }
     disconnected = false
     sendSyncStatus({

@@ -6,7 +6,7 @@ import { getProxy, getTheme, initHotKey, initSetting, parseEnvParams } from './u
 import { navigationUrlWhiteList } from '@common/config'
 import defaultSetting from '@common/defaultSetting'
 import { isExistWindow as isExistMainWindow, showWindow as showMainWindow } from './modules/winMain'
-import { createAppEvent, createDislikeEvent, createListEvent } from '@main/event'
+import { createAppEvent, createDislikeEvent, createListEvent, createUserApiEvent } from '@main/event'
 import { isMac, log } from '@common/utils'
 import createWorkers from './worker'
 import { migrateDBData } from './utils/migrate'
@@ -28,6 +28,7 @@ export const initGlobalData = () => {
     event_app: createAppEvent(),
     event_list: createListEvent(),
     event_dislike: createDislikeEvent(),
+    event_userApi: createUserApiEvent(),
     appSetting: defaultSetting,
     worker: createWorkers(),
     hotKey: {

@@ -87,6 +87,47 @@
         </dl>
       </div>
     </main>
+    <main v-else-if="sync.type == 'userApi'" :class="$style.main">
+      <h2>{{ $t('sync__userApi_title', { name: sync.deviceName }) }}</h2>
+      <div class="scroll" :class="$style.content">
+        <dl :class="$style.btnGroup">
+          <dt :class="$style.label">{{ $t('sync__merge_label') }}</dt>
+          <dd :class="$style.btns">
+            <base-btn :class="$style.btn" @click="handleSelectMode('merge_local_remote')">{{ $t('sync__userApi_merge_btn_local_remote') }}</base-btn>
+            <base-btn :class="$style.btn" @click="handleSelectMode('merge_remote_local')">{{ $t('sync__userApi_merge_btn_remote_local') }}</base-btn>
+          </dd>
+        </dl>
+        <dl :class="$style.btnGroup">
+          <dt :class="$style.label">{{ $t('sync__userApi_overwrite_full_label') }}</dt>
+          <dd :class="$style.btns">
+            <base-btn :class="$style.btn" @click="handleSelectMode('overwrite_local_remote_full')">{{ $t('sync__userApi_overwrite_full_btn_local_remote') }}</base-btn>
+            <base-btn :class="$style.btn" @click="handleSelectMode('overwrite_remote_local_full')">{{ $t('sync__userApi_overwrite_full_btn_remote_local') }}</base-btn>
+          </dd>
+        </dl>
+        <dl :class="$style.btnGroup">
+          <dt :class="$style.label">{{ $t('sync__other_label') }}</dt>
+          <dd :class="$style.btns">
+            <base-btn :class="$style.btn" @click="handleSelectMode('cancel')">{{ $t('sync__overwrite_btn_cancel') }}</base-btn>
+          </dd>
+        </dl>
+        <dl :class="$style.btnGroup">
+          <dd>
+            <section :class="$style.tipGroup">
+              <h3 :class="$style.title">{{ $t('sync__merge_tip') }}</h3>
+              <p :class="$style.tip">{{ $t('sync__userApi_merge_tip_desc') }}</p>
+            </section>
+            <section :class="$style.tipGroup">
+              <h3 :class="$style.title">{{ $t('sync__userApi_overwrite_full_label') }}</h3>
+              <p :class="$style.tip">{{ $t('sync__userApi_overwrite_full_tip_desc') }}</p>
+            </section>
+            <section :class="$style.tipGroup">
+              <h3 :class="$style.title">{{ $t('sync__other_tip') }}</h3>
+              <p :class="$style.tip">{{ $t('sync__userApi_other_tip_desc') }}</p>
+            </section>
+          </dd>
+        </dl>
+      </div>
+    </main>
   </material-modal>
 </template>
 

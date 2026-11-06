@@ -40,6 +40,11 @@ declare namespace LX {
       updateUrl?: string
     }
 
+    interface UserApiData {
+      apis: UserApiInfo[]
+      scripts: Record<string, string>
+    }
+
     interface UserApiRequestParams {
       requestKey: string
       data: any
