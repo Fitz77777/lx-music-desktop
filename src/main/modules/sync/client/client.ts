@@ -203,6 +203,7 @@ export const connect = (urlInfo: LX.Sync.Client.UrlInfo, keyInfo: LX.Sync.Client
   client.remote = message2read.remote
   client.remoteQueueList = message2read.createQueueRemote('list')
   client.remoteQueueDislike = message2read.createQueueRemote('dislike')
+  client.remoteQueueUserApi = message2read.createQueueRemote('userApi')
 
   client.addEventListener('message', ({ data }) => {
     if (data == 'ping') return
