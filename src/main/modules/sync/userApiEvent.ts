@@ -21,7 +21,7 @@ export const setLocalUserApiData = async(data: LX.UserApi.UserApiData, apiSource
     await global.lx.event_userApi.user_api_data_overwrite(data, true)
 
     // 完全覆盖类同步流程携带的激活源：目标脚本存在于同步数据中时跟随远端选择
-    if (/^user_api/.test(apiSource ?? '') && data.apis.some(api => api.id == apiSource)) {
+    if (apiSource != null && /^user_api/.test(apiSource) && data.apis.some(api => api.id == apiSource)) {
       if (apiSource != global.lx.appSetting['common.apiSource']) {
         global.lx.event_app.update_config({ 'common.apiSource': apiSource })
       }
