@@ -42,7 +42,7 @@ const finishedSync = async(socket: LX.Sync.Server.Socket) => {
 
 
 const setLocalData = async(socket: LX.Sync.Server.Socket, data: LX.UserApi.UserApiData) => {
-  await setLocalUserApiData(data)
+  await setLocalUserApiData(data, data.apiSource ?? null)
   const userSpace = getUserSpace(socket.userInfo.name)
   return userSpace.userApiManage.createSnapshot()
 }
