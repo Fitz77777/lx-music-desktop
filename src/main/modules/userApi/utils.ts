@@ -172,11 +172,11 @@ const sanitizeUserApiData = (data: LX.UserApi.UserApiData) => {
   const ids = new Set<string>()
   for (const api of data.apis) {
     if (typeof api.id != 'string' || !api.id) continue
-    if (typeof data.scripts[api.id] != 'string' || data.scripts[api.id] == '') continue
     if (ids.has(api.id)) continue
     ids.add(api.id)
     apis.push(api)
-    newScripts.push({ id: api.id, script: data.scripts[api.id] })
+    const script = data.scripts[api.id]
+    if (typeof script == 'string' && script != '') newScripts.push({ id: api.id, script })
   }
   return { apis, newScripts }
 }
