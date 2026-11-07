@@ -3,12 +3,35 @@ name: Build
 on:
   push:
     branches:
-      - master
+      - release
 
 env:
   IS_CI: 'true'
 
+permissions:
+  contents: write
+
 jobs:
+  # release 分支推送没有 tag，先创建 tag 指向本次提交，
+  # 避免 electron-builder 创建 release 时把 tag 打到默认分支 master 上
+  Tag:
+    name: Create Tag
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out git repository
+        uses: actions/checkout@v6
+
+      - name: Create and push tag
+        run: |
+          VERSION=$(node -p "require('./package.json').version")
+          TAG="v$VERSION"
+          if git ls-remote --exit-code --tags origin "refs/tags/$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skip"
+          else
+            git tag "$TAG"
+            git push origin "$TAG"
+          fi
+
   # CheckCode:
   #   name: Lint Code
   #   runs-on: ubuntu-latest
@@ -43,7 +66,7 @@ jobs:
   Windows:
     name: Windows
     runs-on: windows-latest
-    # needs: CheckCode
+    needs: Tag
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -84,7 +107,7 @@ jobs:
   Windows_7:
     name: Windows_7
     runs-on: windows-latest
-    # needs: CheckCode
+    needs: Tag
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -132,7 +155,7 @@ jobs:
   Mac:
     name: Mac
     runs-on: macos-latest
-    # needs: CheckCode
+    needs: Tag
     steps:
       - name: Check out git repository
         uses: actions/checkout@v6
@@ -172,7 +195,7 @@ jobs:
   Linux:
     name: Linux
     runs-on: ubuntu-latest
-    # needs: CheckCode
+    needs: Tag
     steps:
       - name: Install package
         run: sudo apt-get update && sudo apt-get install -y rpm libarchive-tools

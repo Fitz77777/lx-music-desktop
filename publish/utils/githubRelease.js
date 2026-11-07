@@ -27,13 +27,13 @@ const getBuildFiles = () => {
 // all options have defaults and can be omitted
 const options = {
   tag_name: `v${pkg.version}`,
-  target_commitish: 'master',
+  target_commitish: 'release',
   name: `v${pkg.version}`,
   body: changeLog,
   draft: false,
   prerelease: false,
-  repo: pkg.name,
-  owner: pkg.author,
+  repo: pkg.fork?.repo ?? pkg.name,
+  owner: pkg.fork?.owner ?? pkg.author.name,
   endpoint: 'https://api.github.com', // for GitHub enterprise, use http(s)://hostname/api/v3
   auth: {
     token,
@@ -42,7 +42,7 @@ const options = {
 }
 
 
-module.exports = ({ isDraft = false, isPrerelease = false, target_commitish = 'master' }) => new Promise((resolve, reject) => {
+module.exports = ({ isDraft = false, isPrerelease = false, target_commitish = 'release' }) => new Promise((resolve, reject) => {
   options.target_commitish = target_commitish
   options.draft = isDraft
   options.prerelease = isPrerelease

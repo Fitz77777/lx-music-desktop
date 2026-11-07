@@ -3,18 +3,16 @@ import pkg from '../../../package.json'
 
 // TODO add Notice
 
-const author = pkg.author.name
-const name = pkg.name
+// fork 仓库地址；未配置 fork 字段时回退到 package.json 里的原仓库信息
+const owner = pkg.fork?.owner ?? pkg.author.name
+const repo = pkg.fork?.repo ?? pkg.name
 
+// 版本信息放在 release 分支；master 仅用于同步上游
 const address = [
-  [`https://raw.githubusercontent.com/${author}/${name}/master/publish/version.json`, 'direct'],
-  ['https://registry.npmjs.org/lx-music-desktop-version-info/latest', 'npm'],
-  [`https://cdn.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://fastly.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  [`https://gcore.jsdelivr.net/gh/${author}/${name}/publish/version.json`, 'direct'],
-  ['https://registry.npmmirror.com/lx-music-desktop-version-info/latest', 'npm'],
-  ['https://gitee.com/lyswhut/lx-music-desktop-versions/raw/master/version.json', 'direct'],
-  ['http://cdn.stsky.cn/lx-music/desktop/version.json', 'direct'],
+  [`https://raw.githubusercontent.com/${owner}/${repo}/release/publish/version.json`, 'direct'],
+  [`https://cdn.jsdelivr.net/gh/${owner}/${repo}@release/publish/version.json`, 'direct'],
+  [`https://fastly.jsdelivr.net/gh/${owner}/${repo}@release/publish/version.json`, 'direct'],
+  [`https://gcore.jsdelivr.net/gh/${owner}/${repo}@release/publish/version.json`, 'direct'],
 ]
 
 const request = async(url, retryNum = 0) => {

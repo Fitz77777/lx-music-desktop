@@ -9,6 +9,10 @@ const version_bak = JSON.stringify(version, null, 2)
 const changelogPath = jp('../../CHANGELOG.md')
 const { parseChangelog } = require('./parseChangelog')
 
+const repoUrl = pkg.fork
+  ? `https://github.com/${pkg.fork.owner}/${pkg.fork.repo}`
+  : pkg.repository.url.replace(/^git\+(http.+)\.git$/, '$1')
+
 // const md_renderer = markdownStr => new (require('markdown-it'))({
 //   html: true,
 //   linkify: true,
@@ -24,7 +28,7 @@ const getPrevVer = () => parseChangelog(fs.readFileSync(changelogPath, 'utf-8').
 const updateChangeLog = async(newVerNum, newChangeLog) => {
   let changeLog = fs.readFileSync(changelogPath, 'utf-8')
   const prevVer = await getPrevVer()
-  const log = `## [${newVerNum}](${pkg.repository.url.replace(/^git\+(http.+)\.git$/, '$1')}/compare/v${prevVer}...v${newVerNum}) - ${formatTime()}\n\n${newChangeLog}`
+  const log = `## [${newVerNum}](${repoUrl}/compare/v${prevVer}...v${newVerNum}) - ${formatTime()}\n\n${newChangeLog}`
   fs.writeFileSync(changelogPath, changeLog.replace(/(## \[(?:\d+\.))/, log + '\n$1'), 'utf-8')
 }
 

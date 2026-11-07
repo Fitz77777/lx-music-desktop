@@ -3,6 +3,10 @@
 const builder = require('electron-builder')
 const beforePack = require('./build-before-pack')
 const afterPack = require('./build-after-pack')
+const pkg = require('../package.json')
+
+const publishOwner = pkg.fork?.owner ?? 'lyswhut'
+const publishRepo = pkg.fork?.repo ?? 'lx-music-desktop'
 
 /**
 * @type {import('electron-builder').Configuration}
@@ -46,8 +50,8 @@ const options = {
   publish: [
     {
       provider: 'github',
-      owner: 'lyswhut',
-      repo: 'lx-music-desktop',
+      owner: publishOwner,
+      repo: publishRepo,
     },
   ],
 }

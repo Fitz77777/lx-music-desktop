@@ -11,7 +11,7 @@ export const parseChangelog = async(text) => {
   let currentDesc = ''
 
   for (const line of lines) {
-    const versionMatch = line.match(/^\s*##\s+\[?(\d+\.\d+\.\d+)\]?.*?-\s+(\d{4}-\d{2}-\d{2})$/)
+    const versionMatch = line.match(/^\s*##\s+\[?(\d+\.\d+\.\d+(?:-[0-9A-Za-z.-]+)?)\]?.*?-\s+(\d{4}-\d{2}-\d{2})$/)
     if (versionMatch) {
       if (currentVersion) {
         versions.push({
