@@ -145,6 +145,30 @@ export const onUserApiStatus = (listener: LX.IpcRendererEventListenerParams<LX.U
     rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.user_api_status, listener)
   }
 }
+export const onUserApiAdd = (listener: LX.IpcRendererEventListenerParams<LX.UserApi.UserApiInfo>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.user_api_add, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.user_api_add, listener)
+  }
+}
+export const onUserApiUpdate = (listener: LX.IpcRendererEventListenerParams<LX.UserApi.UserApiInfo>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.user_api_update, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.user_api_update, listener)
+  }
+}
+export const onUserApiRemove = (listener: LX.IpcRendererEventListenerParams<string[]>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.user_api_remove, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.user_api_remove, listener)
+  }
+}
+export const onUserApiDataOverwrite = (listener: LX.IpcRendererEventListenerParams<LX.UserApi.UserApiInfo[]>): RemoveListener => {
+  rendererOn(WIN_MAIN_RENDERER_EVENT_NAME.user_api_data_overwrite, listener)
+  return () => {
+    rendererOff(WIN_MAIN_RENDERER_EVENT_NAME.user_api_data_overwrite, listener)
+  }
+}
 export const getUserApiList = async() => {
   return rendererInvoke<LX.UserApi.UserApiInfo[]>(WIN_MAIN_RENDERER_EVENT_NAME.get_user_api_list)
 }

@@ -1,6 +1,7 @@
 import { registerRendererEvents as common } from '@main/modules/commonRenderers/common'
 import { registerRendererEvents as list } from '@main/modules/commonRenderers/list'
 import { registerRendererEvents as dislike } from '@main/modules/commonRenderers/dislike'
+import { registerRendererEvents as userApiRenderers } from '@main/modules/commonRenderers/userApi'
 import app, { sendConfigChange } from './app'
 import hotKey from './hotKey'
 import userApi from './userApi'
@@ -26,6 +27,7 @@ export default () => {
   common(sendEvent)
   list(sendEvent)
   dislike(sendEvent)
+  userApiRenderers(sendEvent)
   app()
   hotKey()
   userApi()

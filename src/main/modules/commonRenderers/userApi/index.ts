@@ -1,0 +1,1 @@
+export { registerRendererEvents } from './winRendererEvent'

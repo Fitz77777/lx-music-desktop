@@ -107,47 +107,58 @@ const inflateScript = async(script: string) => new Promise<string>((resolve, rej
     })
   } else resolve(script)
 })
-export const importApi = async(scriptRaw: string): Promise<LX.UserApi.UserApiInfo> => {
-  let scriptInfo = parseScriptInfo(scriptRaw)
+/**
+ * 解析脚本并生成源信息（不落盘）
+ */
+export const prepareApiInfo = async(scriptRaw: string): Promise<LX.UserApi.UserApiInfo> => {
+  const scriptInfo = parseScriptInfo(scriptRaw)
   const script = await deflateScript(scriptRaw)
-  userApis ??= []
-  for (const api of userApis) {
+  const apis = getUserApis()
+  for (const api of apis) {
     const existingScript = scripts.get(api.id)
     if (existingScript === script) {
       throw new Error(`导入失败，脚本内容与已有的源「${api.name}」相同`)
     }
   }
-  const apiInfo = {
+  return {
     id: `user_api_${Math.random().toString().substring(2, 5)}_${Date.now()}`,
     ...scriptInfo,
     allowShowUpdateAlert: true,
   }
-  userApis.push(apiInfo)
-  scripts.set(apiInfo.id, script)
+}
+
+const saveApiInfo = async(apiInfo: LX.UserApi.UserApiInfo, script?: string) => {
+  const apis = getUserApis()
+  const index = apis.findIndex(api => api.id == apiInfo.id)
+  if (index < 0) apis.push(apiInfo)
+  else apis.splice(index, 1, apiInfo)
+  if (typeof script == 'string' && script != '') scripts.set(apiInfo.id, await deflateScript(script))
   saveData()
-  global.lx.event_userApi?.user_api_changed()
   return apiInfo
 }
 
-export const removeApi = (ids: string[]) => {
-  if (!userApis) return
-  for (let index = userApis.length - 1; index > -1; index--) {
-    if (ids.includes(userApis[index].id)) {
-      scripts.delete(userApis[index].id)
-      userApis.splice(index, 1)
-      ids.splice(index, 1)
-    }
-  }
-  saveData()
-  global.lx.event_userApi?.user_api_changed()
+export const addApiInfo = async(apiInfo: LX.UserApi.UserApiInfo, script: string) => {
+  await saveApiInfo(apiInfo, script)
+  return apiInfo
 }
 
-export const setAllowShowUpdateAlert = (id: string, enable: boolean) => {
-  const targetApi = userApis?.find(api => api.id == id)
-  if (!targetApi) return
-  targetApi.allowShowUpdateAlert = enable
-  saveData()
-  global.lx.event_userApi?.user_api_changed()
+export const updateApiInfo = async(apiInfo: LX.UserApi.UserApiInfo, script?: string) => {
+  if (!getUserApis().some(api => api.id == apiInfo.id)) return false
+  await saveApiInfo(apiInfo, script)
+  return true
+}
+
+export const removeApiInfo = (ids: string[]): string[] => {
+  const apis = getUserApis()
+  const removedIds: string[] = []
+  for (let index = apis.length - 1; index > -1; index--) {
+    if (!ids.includes(apis[index].id)) continue
+    removedIds.push(apis[index].id)
+    scripts.delete(apis[index].id)
+    apis.splice(index, 1)
+  }
+  if (removedIds.length) saveData()
+  return removedIds
 }
 
 // 同步模块使用：读取完整自定义源数据（脚本内容为解压后的原始文本）
@@ -185,7 +196,7 @@ const sanitizeUserApiData = (data: LX.UserApi.UserApiData) => {
 export const overwriteUserApiData = async(data: LX.UserApi.UserApiData) => {
   const { apis, newScripts } = sanitizeUserApiData(data)
   const newIds = new Set(apis.map(api => api.id))
-  const removedIds = (userApis ?? []).filter(api => !newIds.has(api.id)).map(api => api.id)
+  const removedIds = getUserApis().filter(api => !newIds.has(api.id)).map(api => api.id)
   const changedIds: string[] = []
   for (const { id, script } of newScripts) {
     const existing = await inflateScript(scripts.get(id) ?? '')

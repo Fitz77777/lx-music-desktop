@@ -1,6 +1,6 @@
 import { onBeforeUnmount, watch } from '@common/utils/vueTools'
 import { useI18n } from '@renderer/plugins/i18n'
-import { onUserApiStatus, getUserApiList, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
+import { onUserApiStatus, getUserApiList, onUserApiAdd, onUserApiUpdate, onUserApiRemove, onUserApiDataOverwrite, sendUserApiRequest as sendUserApiRequestRemote, userApiRequestCancel, onShowUserApiUpdateAlert } from '@renderer/utils/ipc'
 import { openUrl } from '@common/utils/electron'
 import { qualityList, userApi } from '@renderer/store'
 import { appSetting } from '@renderer/store/setting'
@@ -165,9 +165,29 @@ export default () => {
     }
   })
 
+  const rUserApiAdd = onUserApiAdd(({ params: apiInfo }) => {
+    const index = userApi.list.findIndex(api => api.id == apiInfo.id)
+    if (index < 0) userApi.list.push(apiInfo)
+    else userApi.list.splice(index, 1, apiInfo)
+  })
+  const rUserApiUpdate = onUserApiUpdate(({ params: apiInfo }) => {
+    const index = userApi.list.findIndex(api => api.id == apiInfo.id)
+    if (index > -1) userApi.list.splice(index, 1, apiInfo)
+  })
+  const rUserApiRemove = onUserApiRemove(({ params: ids }) => {
+    userApi.list = userApi.list.filter(api => !ids.includes(api.id))
+  })
+  const rUserApiDataOverwrite = onUserApiDataOverwrite(({ params: list }) => {
+    userApi.list = list
+  })
+
   onBeforeUnmount(() => {
     rUserApiStatus()
     rUserApiShowUpdateAlert()
+    rUserApiAdd()
+    rUserApiUpdate()
+    rUserApiRemove()
+    rUserApiDataOverwrite()
   })
 
   return async() => {

@@ -112,6 +112,10 @@ const modules = {
     user_api_status: 'user_api_status',
     user_api_show_update_alert: 'user_api_show_update_alert',
     user_api_set_allow_update_alert: 'user_api_set_allow_update_alert',
+    user_api_add: 'user_api_add',
+    user_api_update: 'user_api_update',
+    user_api_remove: 'user_api_remove',
+    user_api_data_overwrite: 'user_api_data_overwrite',
 
     get_palyer_lyric: 'get_lyric',
     // save_lyric: 'save_lyric',
